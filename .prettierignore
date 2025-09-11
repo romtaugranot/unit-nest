@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+
+# Cache
+.jest-cache/
+
+# Logs
+*.log
+
+# Package files
+package-lock.json
+yarn.lock
