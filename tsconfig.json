@@ -19,9 +19,6 @@
     "exactOptionalPropertyTypes": true,
     "moduleResolution": "node",
     "baseUrl": "./",
-    "paths": {
-      "@/*": ["lib/*"]
-    },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
