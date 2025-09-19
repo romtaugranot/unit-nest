@@ -2,8 +2,10 @@ import { MethodKeys, Provider } from '../../private';
 import { SuiteBuilder } from './suite.builder';
 
 export class TestsBuilder<S> {
-  constructor(private readonly _providers: Provider[] = []) {
-    void this._providers;
+  private readonly _providers: Provider[];
+
+  constructor(...providers: Provider[]) {
+    this._providers = providers;
   }
 
   /**
