@@ -1,19 +1,23 @@
-import { MethodKeys, Provider } from '../../private';
+import { MethodKeys, Provider, TestSuiteStore } from '../../private';
 import { SuiteBuilder } from './suite.builder';
 
 export class TestsBuilder<S extends Provider> {
-  private readonly _providers: Provider[];
-  private readonly _cut: S;
+  private readonly providers: Provider[];
+  private readonly cut: S;
+  private readonly suiteStore: TestSuiteStore<S, MethodKeys<S>>;
 
-  constructor(_cut: S, ...providers: Provider[]) {
-    this._providers = providers;
-    this._cut = _cut;
+  constructor(cut: S, ...providers: Provider[]) {
+    this.providers = providers;
+    this.cut = cut;
+    this.suiteStore = new TestSuiteStore<S, MethodKeys<S>>();
   }
 
   /**
    * Add a test suite for a specific method
    */
-  addSuite<K extends MethodKeys<S>>(method: K): SuiteBuilder<S, K> {
-    return new SuiteBuilder<S, K>(method, this._providers, this);
+  addSuite(method: MethodKeys<S>): SuiteBuilder<S, MethodKeys<S>> {
+    return new SuiteBuilder<S, MethodKeys<S>>(method, this, this.suiteStore);
   }
+
+  run(): void {}
 }

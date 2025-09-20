@@ -1,30 +1,46 @@
 import {
+  Expectation,
   MethodKeys,
   MethodParams,
   MethodReturn,
   MethodReturnAsync,
+  MockConfiguration,
   Provider,
+  SpyConfiguration,
+  TestCase,
+  TestCaseStore,
 } from '../../private';
 import { SuiteBuilder } from './suite.builder';
 
 export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
+  private testArgs!: MethodParams<S, K>;
+  private testMocks: MockConfiguration<S>[];
+  private testExpectation!: Expectation<S, K>;
+  private testSpies: SpyConfiguration[];
+
   constructor(
-    private readonly _method: K,
-    private readonly _providers: Provider[],
-    private readonly _suiteBuilder: SuiteBuilder<S, K>,
+    private readonly suiteBuilder: SuiteBuilder<S, K>,
+    private readonly caseStore: TestCaseStore<S, K>,
   ) {
-    void this._method;
-    void this._providers;
+    this.testMocks = [];
+    this.testSpies = [];
   }
 
   /**
    * Mock a provider method to return a specific value
    */
   mockReturnValue<T extends Provider, M extends MethodKeys<T>>(
-    _provider: T,
-    _method: M,
-    _returnValue: MethodReturn<T, M>,
+    provider: T,
+    method: M,
+    returnValue: MethodReturn<T, M>,
   ): this {
+    this.testMocks.push({
+      provider,
+      method,
+      returnType: 'value',
+      value: returnValue,
+    });
+
     return this;
   }
 
@@ -32,10 +48,17 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
    * Mock a provider method to return a specific value
    */
   mockReturnAsyncValue<T extends Provider, M extends MethodKeys<T>>(
-    _provider: T,
-    _method: M,
-    _returnValue: MethodReturn<T, M>,
+    provider: T,
+    method: M,
+    returnValue: MethodReturnAsync<T, M>,
   ): this {
+    this.testMocks.push({
+      provider,
+      method,
+      returnType: 'asyncValue',
+      value: returnValue,
+    });
+
     return this;
   }
 
@@ -43,10 +66,17 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
    * Mock a provider method to throw an error
    */
   mockThrow<T extends Provider, M extends MethodKeys<T>>(
-    _provider: T,
-    _method: M,
-    _error: unknown,
+    provider: T,
+    method: M,
+    error: unknown,
   ): this {
+    this.testMocks.push({
+      provider,
+      method,
+      returnType: 'error',
+      error,
+    });
+
     return this;
   }
 
@@ -54,10 +84,17 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
    * Mock a provider method with a custom implementation
    */
   mockImplementation<T extends Provider, M extends MethodKeys<T>>(
-    _provider: T,
-    _method: M,
-    _implementation: InstanceType<T>[M],
+    provider: T,
+    method: M,
+    implementation: InstanceType<T>[M],
   ): this {
+    this.testMocks.push({
+      provider,
+      method,
+      returnType: 'implementation',
+      implementation,
+    });
+
     return this;
   }
 
@@ -65,27 +102,41 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
    * Spy on the service's own method
    */
   spyOnSelf(): this {
+    // TODO
+
     return this;
   }
 
   /**
    * Set the arguments for the test case
    */
-  args(..._args: MethodParams<S, K>): this {
+  args(...args: MethodParams<S, K>): this {
+    this.testArgs = args;
+
     return this;
   }
 
   /**
    * Set up expectations for the test case
    */
-  expect(_expectedReturn: MethodReturn<S, K>): this {
+  expect(expectedReturn: MethodReturn<S, K>): this {
+    this.testExpectation = {
+      expected: expectedReturn,
+      isAsync: false,
+    };
+
     return this;
   }
 
   /**
    * Syntactic sugar for .expect() with async return value
    */
-  expectAsync(_expectedReturn: MethodReturnAsync<S, K>): this {
+  expectAsync(expectedReturn: MethodReturnAsync<S, K>): this {
+    this.testExpectation = {
+      expected: expectedReturn,
+      isAsync: true,
+    };
+
     return this;
   }
 
@@ -93,6 +144,17 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
    * Complete the current test case and return to the suite builder
    */
   doneCase(): SuiteBuilder<S, K> {
-    return this._suiteBuilder;
+    this.caseStore.addTestCase(this.case);
+
+    return this.suiteBuilder;
+  }
+
+  private get case(): TestCase<S, K> {
+    return {
+      args: this.testArgs,
+      mocks: this.testMocks,
+      expectation: this.testExpectation,
+      spies: this.testSpies,
+    };
   }
 }
