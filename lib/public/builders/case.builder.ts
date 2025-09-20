@@ -21,6 +21,7 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   constructor(
     private readonly suiteBuilder: SuiteBuilder<S, K>,
     private readonly caseStore: TestCaseStore<S, K>,
+    private readonly description: string = 'No description',
   ) {
     this.testMocks = [];
     this.testSpies = [];
@@ -151,6 +152,7 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
 
   private get case(): TestCase<S, K> {
     return {
+      description: this.description,
       args: this.testArgs,
       mocks: this.testMocks,
       expectation: this.testExpectation,

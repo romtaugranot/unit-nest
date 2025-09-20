@@ -22,8 +22,8 @@ export class SuiteBuilder<S extends Provider, K extends MethodKeys<S>> {
   /**
    * Add a test case for this method
    */
-  addCase(): CaseBuilder<S, K> {
-    return new CaseBuilder<S, K>(this, this.caseStore);
+  addCase(description?: string): CaseBuilder<S, K> {
+    return new CaseBuilder<S, K>(this, this.caseStore, description);
   }
 
   /**
