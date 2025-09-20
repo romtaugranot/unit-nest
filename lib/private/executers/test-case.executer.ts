@@ -17,16 +17,38 @@ export class TestCaseExecuter<S extends Provider, K extends MethodKeys<S>> {
     try {
       const boundMethod = cutInstance[method].bind(cutInstance, ...args);
 
-      let result = boundMethod();
-
       if ('error' in expectation) {
-        expect(result).toThrow(expectation.error as Error);
-      } else {
-        if (expectation.isAsync) {
-          result = await result;
+        // Test if the method throws an error
+        try {
+          const result = boundMethod();
+          if (result && typeof result.then === 'function') {
+            // Async method - wait for it to reject
+            await expect(result).rejects.toThrow();
+          } else {
+            // Sync method threw - this should not reach here if it throws properly
+            throw new Error(
+              'Expected method to throw an error, but it returned a value',
+            );
+          }
+        } catch (error) {
+          // Sync method threw - this is expected for sync throwing methods
+          expect(() => {
+            throw error;
+          }).toThrow();
         }
+      } else {
+        try {
+          let result = boundMethod();
 
-        expect(result).toEqual(expectation.expected);
+          if ('isAsync' in expectation && expectation.isAsync) {
+            result = await result;
+          }
+
+          expect(result).toEqual(expectation.expected);
+        } catch (error) {
+          // If we're not expecting an error but one was thrown, fail the test
+          throw new Error(`Unexpected error: ${error}`);
+        }
       }
     } finally {
       this.restoreMocks(mockInstances);

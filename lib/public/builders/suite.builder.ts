@@ -9,14 +9,14 @@ import {
 import { TestsBuilder } from './tests.builder';
 
 export class SuiteBuilder<S extends Provider, K extends MethodKeys<S>> {
-  private readonly caseStore: TestCaseStore<S, K>;
+  private readonly caseStore: TestCaseStore<S, MethodKeys<S>>;
 
   constructor(
     private readonly method: K,
     private readonly testsBuilder: TestsBuilder<S>,
-    private readonly suiteStore: TestSuiteStore<S, K>,
+    private readonly suiteStore: TestSuiteStore<S, MethodKeys<S>>,
   ) {
-    this.caseStore = new TestCaseStore<S, K>();
+    this.caseStore = new TestCaseStore<S, MethodKeys<S>>();
   }
 
   /**

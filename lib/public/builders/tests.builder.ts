@@ -19,8 +19,8 @@ export class TestsBuilder<S extends Provider> {
   /**
    * Add a test suite for a specific method
    */
-  addSuite(method: MethodKeys<S>): SuiteBuilder<S, MethodKeys<S>> {
-    return new SuiteBuilder<S, MethodKeys<S>>(method, this, this.suiteStore);
+  addSuite<K extends MethodKeys<S>>(method: K): SuiteBuilder<S, K> {
+    return new SuiteBuilder<S, K>(method, this, this.suiteStore);
   }
 
   /**

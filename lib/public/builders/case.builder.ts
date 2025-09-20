@@ -120,10 +120,18 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   /**
    * Set up expectations for the test case
    */
-  expect(expectedReturn: MethodReturn<S, K>): this {
+  expectReturn(expectedReturn: MethodReturn<S, K>): this {
     this.testExpectation = {
       expected: expectedReturn,
       isAsync: false,
+    };
+
+    return this;
+  }
+
+  expectThrow(error: unknown): this {
+    this.testExpectation = {
+      error,
     };
 
     return this;
