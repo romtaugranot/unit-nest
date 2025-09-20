@@ -1,2 +1,2 @@
-export * from './suite-store.class';
-export * from './case-store.class';
+export * from './test-suite.store';
+export * from './test-case.store';
