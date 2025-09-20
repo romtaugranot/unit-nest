@@ -2,7 +2,7 @@ import { CaseBuilder } from './case.builder';
 import { MethodKeys, Provider } from '../../private';
 import { TestsBuilder } from './tests.builder';
 
-export class SuiteBuilder<S, K extends MethodKeys<S>> {
+export class SuiteBuilder<S extends Provider, K extends MethodKeys<S>> {
   constructor(
     private readonly _method: K,
     private readonly _providers: Provider[],

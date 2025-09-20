@@ -1,11 +1,13 @@
 import { MethodKeys, Provider } from '../../private';
 import { SuiteBuilder } from './suite.builder';
 
-export class TestsBuilder<S> {
+export class TestsBuilder<S extends Provider> {
   private readonly _providers: Provider[];
+  private readonly _cut: S;
 
-  constructor(...providers: Provider[]) {
+  constructor(_cut: S, ...providers: Provider[]) {
     this._providers = providers;
+    this._cut = _cut;
   }
 
   /**

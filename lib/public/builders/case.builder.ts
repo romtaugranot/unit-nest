@@ -7,7 +7,7 @@ import {
 } from '../../private';
 import { SuiteBuilder } from './suite.builder';
 
-export class CaseBuilder<S, K extends MethodKeys<S>> {
+export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   constructor(
     private readonly _method: K,
     private readonly _providers: Provider[],
@@ -20,7 +20,9 @@ export class CaseBuilder<S, K extends MethodKeys<S>> {
   /**
    * Mock a provider method to return a specific value
    */
-  mockReturnValue<T, M extends MethodKeys<T> = MethodKeys<T>>(
+  mockReturnValue<T extends Provider, M extends MethodKeys<T>>(
+    _provider: T,
+    _method: M,
     _returnValue: MethodReturn<T, M>,
   ): this {
     return this;
@@ -29,7 +31,9 @@ export class CaseBuilder<S, K extends MethodKeys<S>> {
   /**
    * Mock a provider method to return a specific value
    */
-  mockReturnAsyncValue<T, M extends MethodKeys<T> = MethodKeys<T>>(
+  mockReturnAsyncValue<T extends Provider, M extends MethodKeys<T>>(
+    _provider: T,
+    _method: M,
     _returnValue: MethodReturn<T, M>,
   ): this {
     return this;
@@ -52,7 +56,7 @@ export class CaseBuilder<S, K extends MethodKeys<S>> {
   mockImplementation<T extends Provider, M extends MethodKeys<T>>(
     _provider: T,
     _method: M,
-    _implementation: T[M],
+    _implementation: InstanceType<T>[M],
   ): this {
     return this;
   }

@@ -1,21 +1,20 @@
-export type MethodKeys<T> = {
-  [K in keyof T]: T[K] extends Function ? K : never;
-}[keyof T];
+import { Provider } from './provider.type';
 
-export type MethodParams<T, K extends MethodKeys<T>> = T[K] extends (
-  ...args: infer A
-) => unknown
-  ? A
-  : never;
+export type MethodKeys<T extends Provider> = {
+  [K in keyof InstanceType<T>]: InstanceType<T>[K] extends Function ? K : never;
+}[keyof InstanceType<T>];
 
-export type MethodReturn<T, K extends MethodKeys<T>> = T[K] extends (
-  ...args: any[]
-) => infer R
-  ? R
-  : any;
+export type MethodParams<
+  T extends Provider,
+  K extends MethodKeys<T>,
+> = InstanceType<T>[K] extends (...args: infer A) => unknown ? A : never;
 
-export type MethodReturnAsync<T, K extends MethodKeys<T>> = T[K] extends (
-  ...args: any[]
-) => Promise<infer R>
-  ? R
-  : any;
+export type MethodReturn<
+  T extends Provider,
+  K extends MethodKeys<T>,
+> = InstanceType<T>[K] extends (...args: any[]) => infer R ? R : any;
+
+export type MethodReturnAsync<
+  T extends Provider,
+  K extends MethodKeys<T>,
+> = InstanceType<T>[K] extends (...args: any[]) => Promise<infer R> ? R : any;

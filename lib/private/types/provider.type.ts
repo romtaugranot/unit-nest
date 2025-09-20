@@ -1,1 +1,3 @@
-export type Provider<T = any> = string | symbol | (new (...args: any[]) => T) | Function;
+import { Type } from '@nestjs/common';
+
+export type Provider = Type;
