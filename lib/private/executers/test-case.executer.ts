@@ -1,5 +1,9 @@
 import { TestingModule } from '@nestjs/testing';
-import { MockConfiguration, TestCase } from '../interfaces';
+import {
+  MockConfiguration,
+  SelfSpyConfiguration,
+  TestCase,
+} from '../interfaces';
 import { MethodKeys, Provider } from '../types';
 
 export class TestCaseExecuter<S extends Provider, K extends MethodKeys<S>> {
@@ -8,11 +12,13 @@ export class TestCaseExecuter<S extends Provider, K extends MethodKeys<S>> {
    */
   async executeCase(
     method: K,
-    { args, mocks, expectation }: TestCase<S, K>,
+    { args, mocks, expectation, spies }: TestCase<S, K>,
     testingModule: TestingModule,
     cutInstance: InstanceType<S>,
   ): Promise<void> {
     const mockInstances = this.applyMocks(testingModule, mocks);
+
+    const spyInstances = this.applySelfSpies(cutInstance, spies);
 
     try {
       const boundMethod = cutInstance[method].bind(cutInstance, ...args);
@@ -52,6 +58,8 @@ export class TestCaseExecuter<S extends Provider, K extends MethodKeys<S>> {
       }
     } finally {
       this.restoreMocks(mockInstances);
+
+      this.restoreSpies(spyInstances);
     }
   }
 
@@ -93,9 +101,51 @@ export class TestCaseExecuter<S extends Provider, K extends MethodKeys<S>> {
   }
 
   /**
+   * Apply spies to the CUT instance
+   */
+  private applySelfSpies(
+    cutInstance: InstanceType<S>,
+    spies: SelfSpyConfiguration<S>[],
+  ): jest.SpyInstance[] {
+    const spyInstances: jest.SpyInstance[] = [];
+
+    for (const spy of spies) {
+      const spyInstance = jest.spyOn(cutInstance as any, spy.method.toString());
+
+      switch (spy.returnType) {
+        case 'value':
+          spyInstance.mockReturnValue(spy.value);
+          break;
+        case 'asyncValue':
+          spyInstance.mockResolvedValue(spy.value);
+          break;
+        case 'error':
+          spyInstance.mockImplementation(() => {
+            throw spy.error;
+          });
+          break;
+        case 'implementation':
+          spyInstance.mockImplementation(spy.implementation);
+          break;
+      }
+
+      spyInstances.push(spyInstance);
+    }
+
+    return spyInstances;
+  }
+
+  /**
    * Restore mocks
    */
   private restoreMocks(mockInstances: jest.SpyInstance[]): void {
     mockInstances.forEach(mock => mock.mockRestore());
+  }
+
+  /**
+   * Restore spies
+   */
+  private restoreSpies(spyInstances: jest.SpyInstance[]): void {
+    spyInstances.forEach(spy => spy.mockRestore());
   }
 }

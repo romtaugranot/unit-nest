@@ -6,7 +6,7 @@ import {
   MethodReturnAsync,
   MockConfiguration,
   Provider,
-  SpyConfiguration,
+  SelfSpyConfiguration,
   TestCase,
   TestCaseStore,
 } from '../../private';
@@ -16,7 +16,7 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   private testArgs!: MethodParams<S, K>;
   private testMocks: MockConfiguration<S>[];
   private testExpectation!: Expectation<S, K>;
-  private testSpies: SpyConfiguration[];
+  private testSpies: SelfSpyConfiguration<S>[];
 
   constructor(
     private readonly suiteBuilder: SuiteBuilder<S, K>,
@@ -100,10 +100,62 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   }
 
   /**
-   * Spy on the service's own method
+   * Spy on the service's own method and mock its return value
    */
-  spyOnSelf(): this {
-    // TODO
+  spyOnSelf<M extends MethodKeys<S>>(
+    method: M,
+    returnValue: MethodReturn<S, M>,
+  ): this {
+    this.testSpies.push({
+      method,
+      returnType: 'value',
+      value: returnValue,
+    });
+
+    return this;
+  }
+
+  /**
+   * Spy on the service's own method and mock its async return value
+   */
+  spyOnSelfAsync<M extends MethodKeys<S>>(
+    method: M,
+    returnValue: MethodReturnAsync<S, M>,
+  ): this {
+    this.testSpies.push({
+      method,
+      returnType: 'asyncValue',
+      value: returnValue,
+    });
+
+    return this;
+  }
+
+  /**
+   * Spy on the service's own method and mock it to throw an error
+   */
+  spyOnSelfThrow<M extends MethodKeys<S>>(method: M, error: unknown): this {
+    this.testSpies.push({
+      method,
+      returnType: 'error',
+      error,
+    });
+
+    return this;
+  }
+
+  /**
+   * Spy on the service's own method and mock its implementation
+   */
+  spyOnSelfImplementation<M extends MethodKeys<S>>(
+    method: M,
+    implementation: InstanceType<S>[M],
+  ): this {
+    this.testSpies.push({
+      method,
+      returnType: 'implementation',
+      implementation,
+    });
 
     return this;
   }

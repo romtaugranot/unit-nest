@@ -135,8 +135,17 @@ Partial mocks supported (only the mocked method changes)
 .mockImplementation(provider, method, fn)
 Replace a provider method with a custom implementation.
 
-.spyOnSelf(method, impl?)
-Spy on or override the CUT’s own methods.
+.spyOnSelf(method, returnValue)
+Spy on the CUT's own methods and mock their return values.
+
+.spyOnSelfAsync(method, returnValue)
+Spy on the CUT's own async methods and mock their return values.
+
+.spyOnSelfThrow(method, error)
+Spy on the CUT's own methods and mock them to throw errors.
+
+.spyOnSelfImplementation(method, implementation)
+Spy on the CUT's own methods and replace them with custom implementations.
 
 .mockModuleReturn(moduleName, fnName, value)
 Mock external modules (axios, fs, fs/promises).
@@ -201,6 +210,40 @@ Service with single dependency
 Controller with mocked service
 
 Guard with partial mocks
+
+**Internal Method Mocking**
+
+```typescript
+class ServiceWithInternalMethods {
+  methodA(input: string): string {
+    return this.methodB(input) + ' processed by A';
+  }
+
+  methodB(input: string): string {
+    return this.methodC(input) + ' processed by B';
+  }
+
+  methodC(input: string): string {
+    return `original: ${input}`;
+  }
+}
+
+const builder = new TestsBuilder(ServiceWithInternalMethods);
+
+builder
+  .addSuite('methodA')
+    .addCase('should allow mocking internal methodC')
+      .args('test input')
+      .spyOnSelf('methodC', 'mocked: test input')
+      .expectReturn('mocked: test input processed by B processed by A')
+      .doneCase()
+    .addCase('should allow mocking methodC to throw error')
+      .args('test input')
+      .spyOnSelfThrow('methodC', new Error('Mocked error'))
+      .expectThrow(new Error('Mocked error'))
+      .doneCase()
+    .doneSuite();
+```
 
 Mocking axios request
 
