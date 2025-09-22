@@ -65,7 +65,7 @@ module.exports = [
       'no-extra-boolean-cast': 'error',
 
       // Delegate formatting to Prettier
-      'prettier/prettier': 'error',
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
   prettierConfig,
