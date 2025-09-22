@@ -37,10 +37,12 @@ Peer dependencies (keep your preferred ranges):
 ```ts
 import { TestsBuilder } from 'unit-nest';
 
+@Injectable()
 class UserService {
   someMethod() { return 'someMethod'; }
 }
 
+@Injectable()
 class AuthService {
   constructor(private readonly userService: UserService) {}
   someMethod(arg: string, arg2: number) {
