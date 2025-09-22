@@ -1,10 +1,16 @@
 import {
+  AxiosFunctions,
   Expectation,
+  FsAsyncFunctions,
+  FsReturn,
+  FsReturnAsync,
+  FsSyncFunctions,
   MethodKeys,
   MethodParams,
   MethodReturn,
   MethodReturnAsync,
   MockConfiguration,
+  ModuleMockConfiguration,
   Provider,
   SelfSpyConfiguration,
   TestCase,
@@ -15,6 +21,7 @@ import { SuiteBuilder } from './suite.builder';
 export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   private testArgs!: MethodParams<S, K>;
   private testMocks: MockConfiguration<S>[];
+  private testModuleMocks: ModuleMockConfiguration[];
   private testExpectation!: Expectation<S, K>;
   private testSpies: SelfSpyConfiguration<S>[];
 
@@ -24,6 +31,7 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
     private readonly description: string = 'No description',
   ) {
     this.testMocks = [];
+    this.testModuleMocks = [];
     this.testSpies = [];
   }
 
@@ -97,6 +105,83 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
     });
 
     return this;
+  }
+
+  /**
+   * Mock a CommonJS/ES module method via jest.mock
+   */
+  mockModuleReturn(
+    moduleName: string,
+    method: string,
+    returnValue: unknown,
+  ): this {
+    this.testModuleMocks.push({
+      moduleName,
+      method,
+      returnType: 'value',
+      value: returnValue,
+    });
+
+    return this;
+  }
+
+  mockModuleReturnAsync(
+    moduleName: string,
+    method: string,
+    returnValue: unknown,
+  ): this {
+    this.testModuleMocks.push({
+      moduleName,
+      method,
+      returnType: 'asyncValue',
+      value: returnValue,
+    });
+
+    return this;
+  }
+
+  mockModuleThrow(moduleName: string, method: string, error: unknown): this {
+    this.testModuleMocks.push({
+      moduleName,
+      method,
+      returnType: 'error',
+      error,
+    });
+
+    return this;
+  }
+
+  mockModuleImplementation(
+    moduleName: string,
+    method: string,
+    implementation: (...args: unknown[]) => unknown,
+  ): this {
+    this.testModuleMocks.push({
+      moduleName,
+      method,
+      returnType: 'implementation',
+      implementation,
+    });
+
+    return this;
+  }
+
+  /**
+   * Sugar helpers for common modules
+   */
+  mockAxios(method: AxiosFunctions, value: unknown): this {
+    return this.mockModuleReturn('axios', method, value);
+  }
+
+  mockFS<M extends FsSyncFunctions>(method: M, value: FsReturn<M>): this {
+    return this.mockModuleReturn('fs', method, value);
+  }
+
+  mockFSAsync<M extends FsAsyncFunctions>(
+    method: M,
+    value: FsReturnAsync<M>,
+  ): this {
+    return this.mockModuleReturnAsync('fs/promises', method, value);
   }
 
   /**
@@ -215,6 +300,7 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
       description: this.description,
       args: this.testArgs,
       mocks: this.testMocks,
+      moduleMocks: this.testModuleMocks,
       expectation: this.testExpectation,
       spies: this.testSpies,
     };

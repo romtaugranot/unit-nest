@@ -1,6 +1,7 @@
 import { TestingModule } from '@nestjs/testing';
 import {
   MockConfiguration,
+  ModuleMockConfiguration,
   SelfSpyConfiguration,
   TestCase,
 } from '../interfaces';
@@ -12,11 +13,12 @@ export class TestCaseExecuter<S extends Provider, K extends MethodKeys<S>> {
    */
   async executeCase(
     method: K,
-    { args, mocks, expectation, spies }: TestCase<S, K>,
+    { args, mocks, moduleMocks, expectation, spies }: TestCase<S, K>,
     testingModule: TestingModule,
     cutInstance: InstanceType<S>,
   ): Promise<void> {
     const mockInstances = this.applyMocks(testingModule, mocks);
+    const moduleRestoreFns = this.applyModuleMocks(moduleMocks ?? []);
 
     const spyInstances = this.applySelfSpies(cutInstance, spies);
 
@@ -58,9 +60,55 @@ export class TestCaseExecuter<S extends Provider, K extends MethodKeys<S>> {
       }
     } finally {
       this.restoreMocks(mockInstances);
+      this.restoreModuleMocks(moduleRestoreFns);
 
       this.restoreSpies(spyInstances);
     }
+  }
+
+  /**
+   * Apply module mocks using jest.mock
+   */
+  private applyModuleMocks(
+    moduleMocks: ModuleMockConfiguration[],
+  ): Array<() => void> {
+    const restoreFns: Array<() => void> = [];
+
+    for (const mock of moduleMocks) {
+      const originalModule = require(mock.moduleName);
+
+      const originalMethod = originalModule[mock.method];
+
+      const spy = jest.spyOn(originalModule, mock.method);
+
+      switch (mock.returnType) {
+        case 'value':
+          spy.mockReturnValue(mock.value);
+          break;
+        case 'asyncValue':
+          spy.mockResolvedValue(mock.value);
+          break;
+        case 'error':
+          spy.mockImplementation(() => {
+            throw mock.error;
+          });
+          break;
+        case 'implementation':
+          spy.mockImplementation(mock.implementation);
+          break;
+      }
+
+      restoreFns.push(() => {
+        spy.mockRestore();
+        originalModule[mock.method] = originalMethod;
+      });
+    }
+
+    return restoreFns;
+  }
+
+  private restoreModuleMocks(restoreFns: Array<() => void>): void {
+    restoreFns.forEach(fn => fn());
   }
 
   /**
