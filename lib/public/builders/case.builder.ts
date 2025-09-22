@@ -154,7 +154,7 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   mockModuleImplementation(
     moduleName: string,
     method: string,
-    implementation: (...args: unknown[]) => unknown,
+    implementation: (...args: any[]) => unknown,
   ): this {
     this.testModuleMocks.push({
       moduleName,
