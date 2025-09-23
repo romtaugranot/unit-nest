@@ -45,20 +45,6 @@
     "node": ">=18.18 || >=20"
   },
   "sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js"
-    },
-    "./public": {
-      "types": "./dist/public/index.d.ts",
-      "require": "./dist/public/index.js"
-    },
-    "./public/builders": {
-      "types": "./dist/public/builders/index.d.ts",
-      "require": "./dist/public/builders/index.js"
-    }
-  },
   "peerDependencies": {
     "@nestjs/common": "^11.1.6",
     "@nestjs/testing": "^11.1.6",
