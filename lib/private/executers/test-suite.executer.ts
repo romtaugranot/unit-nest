@@ -1,4 +1,4 @@
-import { MethodKeys, Provider } from '../types';
+import { MethodKeys, Provider, NestProvider } from '../types';
 import { TestSuite } from '../interfaces';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TestCaseExecuter } from './test-case.executer';
@@ -8,7 +8,7 @@ export class TestSuiteExecuter<S extends Provider, K extends MethodKeys<S>> {
 
   constructor(
     private readonly cut: S,
-    private readonly providers: Provider[],
+    private readonly providers: NestProvider[],
   ) {
     this.providers = providers;
     this.cut = cut;

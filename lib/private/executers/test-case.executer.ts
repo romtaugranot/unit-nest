@@ -5,9 +5,10 @@ import {
   SelfSpyConfiguration,
   TestCase,
 } from '../interfaces';
-import { MethodKeys, Provider } from '../types';
+import { MethodKeys } from '../types';
+import { Type } from '@nestjs/common';
 
-export class TestCaseExecuter<S extends Provider, K extends MethodKeys<S>> {
+export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
   /**
    * Execute a test case
    */

@@ -1,11 +1,11 @@
-import { MethodKeys, Provider } from '../types';
+import { MethodKeys, Provider, NestProvider } from '../types';
 import { TestSuite } from '../interfaces';
 import { TestSuiteExecuter } from './test-suite.executer';
 
 export class TestsExecuter<S extends Provider> {
   private readonly testSuiteExecutor: TestSuiteExecuter<S, MethodKeys<S>>;
 
-  constructor(cut: S, providers: Provider[]) {
+  constructor(cut: S, providers: NestProvider[]) {
     this.testSuiteExecutor = new TestSuiteExecuter<S, MethodKeys<S>>(
       cut,
       providers,

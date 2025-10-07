@@ -66,6 +66,39 @@ void builder.run();
 
 ---
 
+## 🔑 Using @Inject tokens (string/symbol providers)
+
+```ts
+import { TestsBuilder } from 'unit-nest';
+import { Inject, Injectable, Module } from '@nestjs/common';
+
+@Injectable()
+class CutService {
+  constructor(@Inject('SUFFIX') private readonly suffix: string) {}
+
+  alpha(a: string) {
+    return `${a}-${this.suffix}`;
+  }
+}
+
+// Provide token via value provider
+const builder = new TestsBuilder(CutService, { provide: 'SUFFIX', useValue: 'hello' });
+
+builder
+  .addSuite('alpha')
+    .addCase('appends suffix')
+      .args('go')
+      .expectReturn('go-hello')
+      .doneCase()
+    .doneSuite();
+
+void builder.run();
+```
+
+This works with any Nest provider syntax (class, value, factory, existing, and tokens).
+
+---
+
 ## 🧰 API (essentials)
 
 ```ts
