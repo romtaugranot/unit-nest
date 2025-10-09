@@ -4,16 +4,24 @@ import {
   NestProvider,
   TestsExecuter,
   TestSuiteStore,
+  AutoMockResolver,
 } from '../../private';
 import { SuiteBuilder } from './suite.builder';
 
 export class TestsBuilder<S extends Provider> {
   private readonly suiteStore: TestSuiteStore<S, MethodKeys<S>>;
   private readonly testsExecuter: TestsExecuter<S>;
+  private readonly allProviders: NestProvider[];
 
   constructor(cut: S, ...providers: NestProvider[]) {
-    this.testsExecuter = new TestsExecuter<S>(cut, providers);
+    // Always enable shallow mocking - automatically mock missing dependencies
+    const classProviders = providers.filter(p => typeof p === 'function');
 
+    const autoMocks = AutoMockResolver.createAutoMocks(classProviders);
+
+    this.allProviders = [...providers, ...autoMocks];
+
+    this.testsExecuter = new TestsExecuter<S>(cut, this.allProviders);
     this.suiteStore = new TestSuiteStore<S, MethodKeys<S>>();
   }
 

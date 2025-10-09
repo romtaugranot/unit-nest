@@ -26,6 +26,12 @@ export class TestSuiteExecuter<S extends Provider, K extends MethodKeys<S>> {
         cutInstance = this.getCutInstance(testingModule);
       });
 
+      afterAll(async () => {
+        if (testingModule) {
+          await testingModule.close();
+        }
+      });
+
       for (const testCase of cases) {
         it(testCase.description, async () => {
           await this.testCaseExecutor.executeCase(

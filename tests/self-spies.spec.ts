@@ -28,13 +28,13 @@ builder
 
   .addCase('spyOnSelf forces return value')
   .args(2, 3)
-  .spyOnSelf('add', 10 as any)
+  .spyOnSelf('add', 10)
   .expectReturn(20)
   .doneCase()
 
   .addCase('spyOnSelfImplementation custom logic')
   .args(1, 4)
-  .spyOnSelfImplementation('add', ((a: number, b: number) => a * b) as any)
+  .spyOnSelfImplementation('add', (a: number, b: number) => a * b)
   .expectReturn(8)
   .doneCase()
 
@@ -44,7 +44,7 @@ builder
 
   .addCase('spyOnSelfAsync resolves value')
   .args('ok')
-  .spyOnSelfAsync('getAsyncInner', Promise.resolve('OK') as any)
+  .spyOnSelfAsync('getAsyncInner', 'OK')
   .expectAsync('OK!')
   .doneCase()
 

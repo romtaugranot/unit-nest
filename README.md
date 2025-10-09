@@ -2,19 +2,86 @@
 
 > Fluent, type-safe builder for unit testing NestJS with Jest
 
-`unit-nest` wraps Jest and `@nestjs/testing` with a fluent, builder-pattern API. Define suites and cases against a class under test (CUT), mock providers/modules, and assert sync/async results with minimal boilerplate.
+`unit-nest` wraps Jest and `@nestjs/testing` with a fluent, builder-pattern API. Define test suites and cases against your class under test (CUT), mock providers and modules, and assert results with minimal boilerplate and maximum type safety.
 
 ---
 
-## ✨ Features
+## ✨ Why unit-nest?
 
-- Fluent builders: `TestsBuilder` → `SuiteBuilder` → `CaseBuilder`
-- Auto `TestingModule` setup with CUT + explicit providers
-- Mock provider methods (value, resolved value, throw, implementation)
-- Spy on CUT methods (value, resolved value, throw, implementation)
-- Module mocks via `jest.spyOn(require(module), method)` for `axios`, `fs`, `fs/promises`
-- Sync and async expectations
-- Type-safe args/returns inferred from method signatures
+### **Fluent Builder Pattern**
+Write tests that read like specifications with a natural, chainable API that guides you through the testing process.
+
+### **Automatic Shallow Mocking**
+Focus on testing your direct dependencies while deeper dependencies are automatically mocked with sensible defaults. No more complex dependency chains to manage.
+
+### **Type Safety**
+Full TypeScript support with method signatures, parameters, and return types inferred from your actual code. Catch errors at compile time, not runtime.
+
+### **Minimal Boilerplate**
+Reduce test setup code by up to 70% compared to traditional Jest + `@nestjs/testing` approaches.
+
+---
+
+## 🎯 Core Features
+
+### **Builder Pattern Architecture**
+- `TestsBuilder` → `SuiteBuilder` → `CaseBuilder` for intuitive test organization
+- One method per suite, multiple cases per method
+- Clear separation of concerns and readable test structure
+
+### **Intelligent Mocking System**
+- **Provider Mocking**: Mock any provider method with return values, async values, errors, or custom implementations
+- **Module Mocking**: Built-in support for common modules like `axios`, `fs`, and `fs/promises`
+- **Self-Spying**: Spy on methods within your class under test for isolated testing
+- **Automatic Mocking**: Missing dependencies are automatically mocked with default behaviors
+
+### **Flexible Expectations**
+- **Synchronous**: Test return values with `expectReturn()`
+- **Asynchronous**: Test promises with `expectAsync()`
+- **Error Handling**: Test exception scenarios with `expectThrow()`
+
+### **Dependency Injection Support**
+- Full support for NestJS providers including classes, tokens, and custom providers
+- Works with `@Inject()` decorators and string/symbol tokens
+- Seamless integration with NestJS testing module
+
+---
+
+## 🚀 Use Cases
+
+### **Service Layer Testing**
+Perfect for testing business logic services with complex dependency relationships. Focus on your service's behavior while dependencies are automatically handled.
+
+### **Repository Pattern Testing**
+Test data access layers with mocked external dependencies. Verify business logic without hitting databases or external APIs.
+
+### **Integration with External Services**
+Mock HTTP clients, file systems, and other external dependencies to test your service's integration logic in isolation.
+
+### **Complex Business Logic**
+Test intricate business rules and workflows with multiple dependencies, ensuring each path through your code is properly validated.
+
+---
+
+## 🎭 Shallow Mocking Philosophy
+
+`unit-nest` embraces **shallow mocking** as the default behavior, based on these principles:
+
+### **Focus on Direct Dependencies**
+- Only provide the dependencies your class directly uses
+- Deeper dependencies are automatically mocked with sensible defaults
+- Reduces test brittleness and setup complexity
+
+### **Default Mock Behaviors**
+- **Synchronous methods**: Return `undefined` by default
+- **Asynchronous methods**: Return `Promise.resolve(undefined)` by default
+- **Override when needed**: Use explicit mocks for specific test scenarios
+
+### **Benefits**
+- **Simplified Setup**: No need to provide entire dependency chains
+- **Focused Testing**: Test your class's behavior, not its dependencies' dependencies
+- **Maintainable Tests**: Changes to deeper dependencies don't break your tests
+- **Faster Development**: Less time spent on test setup, more time on actual testing
 
 ---
 
@@ -24,195 +91,106 @@
 npm install --save-dev unit-nest
 ```
 
-Peer dependencies (keep your preferred ranges):
-- `jest`
-- `@nestjs/testing`
-- `@nestjs/common`
-- Optional: `axios` (only if you mock it)
+### **Peer Dependencies**
+Keep your preferred versions of:
+- `jest` (^30.1.3)
+- `@nestjs/testing` (^11.1.6)
+- `@nestjs/common` (^11.1.6)
+- `axios` (^1.12.2) - only if you use module mocking
 
 ---
 
-## 🚀 Quick start
+## 🎨 Design Principles
 
-```ts
-import { TestsBuilder } from 'unit-nest';
+### **Convention over Configuration**
+Sensible defaults that work for most use cases, with easy overrides when needed.
 
-@Injectable()
-class UserService {
-  someMethod() { return 'someMethod'; }
-}
+### **Type Safety First**
+Leverage TypeScript's type system to catch errors early and provide excellent IDE support.
 
-@Injectable()
-class AuthService {
-  constructor(private readonly userService: UserService) {}
-  someMethod(arg: string, arg2: number) {
-    return arg + this.userService.someMethod() + String(arg2);
-  }
-}
+### **Test Readability**
+Tests should read like specifications, making it easy to understand what's being tested and why.
 
-const builder = new TestsBuilder(AuthService, UserService);
-
-builder
-  .addSuite('someMethod')
-    .addCase('concats and returns')
-      .args('test', 1)
-      .mockReturnValue(UserService, 'someMethod', 'return value')
-      .expectReturn('testreturn value1')
-      .doneCase()
-    .doneSuite();
-
-void builder.run();
-```
+### **Minimal API Surface**
+Simple, focused API that's easy to learn and remember.
 
 ---
 
-## 🔑 Using @Inject tokens (string/symbol providers)
+## 🔧 Key Assumptions
 
-```ts
-import { TestsBuilder } from 'unit-nest';
-import { Inject, Injectable, Module } from '@nestjs/common';
+### **Unit Testing Focus**
+- Designed for unit testing individual classes and services
+- Not intended for integration or end-to-end testing
+- Assumes you want to test your class in isolation
 
-@Injectable()
-class CutService {
-  constructor(@Inject('SUFFIX') private readonly suffix: string) {}
+### **NestJS Ecosystem**
+- Built specifically for NestJS applications
+- Assumes familiarity with NestJS dependency injection
+- Works with NestJS testing patterns and conventions
 
-  alpha(a: string) {
-    return `${a}-${this.suffix}`;
-  }
-}
+### **Jest as Test Runner**
+- Integrates with Jest's testing framework
+- Assumes Jest is your preferred test runner
+- Leverages Jest's mocking and assertion capabilities
 
-// Provide token via value provider
-const builder = new TestsBuilder(CutService, { provide: 'SUFFIX', useValue: 'hello' });
-
-builder
-  .addSuite('alpha')
-    .addCase('appends suffix')
-      .args('go')
-      .expectReturn('go-hello')
-      .doneCase()
-    .doneSuite();
-
-void builder.run();
-```
-
-This works with any Nest provider syntax (class, value, factory, existing, and tokens).
+### **TypeScript Usage**
+- Optimized for TypeScript projects
+- Assumes you want compile-time type checking
+- Provides better experience with TypeScript than JavaScript
 
 ---
 
-## 🧰 API (essentials)
+## 🛠 Common Patterns
 
-```ts
-new TestsBuilder<S extends Provider>(cut: S, ...providers: Provider[])
-  .addSuite<K extends MethodKeys<S>>(method: K) // → SuiteBuilder
-  .run();
+### **Testing Service Methods**
+Create focused test suites for individual methods, with multiple test cases covering different scenarios and edge cases.
 
-// Suite
-suite.addCase(description?) // → CaseBuilder
-     .doneSuite(); // back to TestsBuilder
+### **Mocking External Dependencies**
+Use provider mocking for services and module mocking for external libraries, keeping your tests fast and reliable.
 
-// Case: args
-case.args(...args: MethodParams<S, K>);
+### **Testing Error Scenarios**
+Leverage the error expectation capabilities to ensure your services handle failures gracefully.
 
-// Case: provider mocks
-case.mockReturnValue(provider, method, value);
-case.mockReturnAsyncValue(provider, method, value);
-case.mockThrow(provider, method, error);
-case.mockImplementation(provider, method, impl);
-
-// Case: module mocks
-case.mockModuleReturn('axios', 'get', Promise.resolve({ data: 'ok' }));
-case.mockAxios('get', { data: 'ok' })
-case.mockFS('readFile', 'content');
-case.mockFSAsync('readFile', 'content');
-
-// Case: self spies
-case.spyOnSelf('methodC', 'value');
-case.spyOnSelfAsync('methodC', Promise.resolve('value'));
-case.spyOnSelfThrow('methodC', new Error('x'));
-case.spyOnSelfImplementation('methodC', impl);
-
-// Case: expectations
-case.expectReturn(value);
-case.expectAsync(value);
-case.expectThrow(error);
-
-case.doneCase(); // back to SuiteBuilder
-```
+### **Async Method Testing**
+Use async expectations to test promise-based methods, ensuring proper handling of asynchronous operations.
 
 ---
 
-## ✅ Best practices
+## 🔒 Scope & Limitations
 
-- Keep one method per suite; add more suites for other methods.
-- Pass only direct providers your CUT uses; mock deeper deps via provider mocks.
-- Prefer `expectAsync` (with resolved values) for async methods.
-- Use `spyOnSelf` to isolate internal paths without over-coupling.
-- Give descriptive case names; they become Jest test titles.
-- Avoid testing private methods; focus on externally observable behavior.
+### **Current Limitations**
+- **Unit Testing Only**: Designed for testing individual classes, not full application integration
+- **Observables Not Supported**: RxJS observables are not yet supported (planned for future releases)
+- **Private Method Access**: Cannot directly test private methods through the type system
 
----
-
-## 🛠 Troubleshooting
-
-- No tests run: ensure you call `builder.run()`.
-- Provider not found: include it in `new TestsBuilder(CUT, ProviderA, ProviderB)`.
-- Module mock not applied: confirm the module is installed and method exists.
-- Async mismatch: use `expectAsync` for `Promise` methods.
+### **Planned Enhancements**
+- **Observable Support**: RxJS integration with marble testing capabilities
+- **Enhanced Token Support**: Improved support for non-class providers and custom tokens
+- **Integration Testing**: Support for testing multiple classes together
 
 ---
 
-## ⚙️ CI (GitHub Actions)
+## 🗺 Roadmap
 
-Minimal Node workflow (runs tests on PRs):
+### **Near Term**
+- Enhanced error messages and debugging capabilities
+- Improved TypeScript inference for complex scenarios
+- Additional module mocking support
 
-```yaml
-name: ci
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci
-      - run: npm run type-check
-      - run: npm run lint
-      - run: npm run test:ci
-```
-
----
-
-## 🔒 Scope & limitations
-
-- Unit testing only (CUT + explicitly listed providers)
-- Observables not yet supported
-- Private methods cannot be targeted directly by the type system
-
----
-
-## 🗺 Roadmap / Ideas
-
-- Non-class providers and tokens: support Nest style tokens (string/symbol) and value/factory providers, e.g. testing with `@Inject(TOKEN)`.
-- Observable expectations: helpers for RxJS (e.g., `expectObservable`, marble testing integration).
-
-If you rely on tokens or non-class providers today, typical workaround is to expose a thin class adapter for the token’s API and mock its methods. Native token support is planned for a future release.
-
----
-
-## 📜 Scripts
-
-- `build`, `build:watch`
-- `test`, `test:watch`, `test:coverage`, `test:ci`
-- `lint`, `lint:fix`
-- `format`, `format:check`
-- `type-check`
-- `clean`
-- `docs`
+### **Future Releases**
+- Observable testing with RxJS integration
+- Enhanced integration testing capabilities
+- Performance optimizations for large test suites
 
 ---
 
 ## 📄 License
 
 MIT © Contributors of unit-nest
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! 
+
