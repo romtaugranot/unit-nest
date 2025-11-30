@@ -120,30 +120,73 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
     mocks: MockConfiguration<S>[],
   ): jest.SpyInstance[] {
     const mockInstances: jest.SpyInstance[] = [];
+    const spyMap = new Map<string, jest.SpyInstance>();
+
+    // Group mocks by provider and method to handle sequential mocking
+    const mockGroups = new Map<string, MockConfiguration<S>[]>();
 
     for (const mock of mocks) {
-      const providerInstance = testingModule.get(mock.provider);
+      const key = `${mock.provider.name || mock.provider.toString()}.${mock.method.toString()}`;
+      if (!mockGroups.has(key)) {
+        mockGroups.set(key, []);
+      }
+      mockGroups.get(key)!.push(mock);
+    }
 
-      const spy = jest.spyOn(providerInstance, mock.method.toString());
+    // Apply mocks - use sequential mocking if multiple mocks for same provider/method
+    for (const [key, mockGroup] of mockGroups.entries()) {
+      const firstMock = mockGroup[0];
+      const providerInstance = testingModule.get(firstMock.provider);
 
-      switch (mock.returnType) {
-        case 'value':
-          spy.mockReturnValue(mock.value);
-          break;
-        case 'asyncValue':
-          spy.mockResolvedValue(mock.value);
-          break;
-        case 'error':
-          spy.mockImplementation(() => {
-            throw mock.error;
-          });
-          break;
-        case 'implementation':
-          spy.mockImplementation(mock.implementation);
-          break;
+      // Get or create spy
+      let spy: jest.SpyInstance;
+      if (spyMap.has(key)) {
+        spy = spyMap.get(key)!;
+      } else {
+        spy = jest.spyOn(providerInstance, firstMock.method.toString());
+        spyMap.set(key, spy);
+        mockInstances.push(spy);
       }
 
-      mockInstances.push(spy);
+      // If multiple mocks for same provider/method, use sequential mocking
+      if (mockGroup.length > 1) {
+        for (const mock of mockGroup) {
+          switch (mock.returnType) {
+            case 'value':
+              spy.mockReturnValueOnce(mock.value);
+              break;
+            case 'asyncValue':
+              spy.mockResolvedValueOnce(mock.value);
+              break;
+            case 'error':
+              spy.mockImplementationOnce(() => {
+                throw mock.error;
+              });
+              break;
+            case 'implementation':
+              spy.mockImplementationOnce(mock.implementation);
+              break;
+          }
+        }
+      } else {
+        // Single mock - use regular mocking
+        switch (firstMock.returnType) {
+          case 'value':
+            spy.mockReturnValue(firstMock.value);
+            break;
+          case 'asyncValue':
+            spy.mockResolvedValue(firstMock.value);
+            break;
+          case 'error':
+            spy.mockImplementation(() => {
+              throw firstMock.error;
+            });
+            break;
+          case 'implementation':
+            spy.mockImplementation(firstMock.implementation);
+            break;
+        }
+      }
     }
 
     return mockInstances;
@@ -157,28 +200,72 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
     spies: SelfSpyConfiguration<S>[],
   ): jest.SpyInstance[] {
     const spyInstances: jest.SpyInstance[] = [];
+    const spyMap = new Map<string, jest.SpyInstance>();
+
+    // Group spies by method to handle sequential spying
+    const spyGroups = new Map<string, SelfSpyConfiguration<S>[]>();
 
     for (const spy of spies) {
-      const spyInstance = jest.spyOn(cutInstance as any, spy.method.toString());
+      const key = spy.method.toString();
+      if (!spyGroups.has(key)) {
+        spyGroups.set(key, []);
+      }
+      spyGroups.get(key)!.push(spy);
+    }
 
-      switch (spy.returnType) {
-        case 'value':
-          spyInstance.mockReturnValue(spy.value);
-          break;
-        case 'asyncValue':
-          spyInstance.mockResolvedValue(spy.value);
-          break;
-        case 'error':
-          spyInstance.mockImplementation(() => {
-            throw spy.error;
-          });
-          break;
-        case 'implementation':
-          spyInstance.mockImplementation(spy.implementation);
-          break;
+    // Apply spies - use sequential spying if multiple spies for same method
+    for (const [key, spyGroup] of spyGroups.entries()) {
+      const firstSpy = spyGroup[0];
+
+      // Get or create spy instance
+      let spyInstance: jest.SpyInstance;
+      if (spyMap.has(key)) {
+        spyInstance = spyMap.get(key)!;
+      } else {
+        spyInstance = jest.spyOn(cutInstance as any, firstSpy.method.toString());
+        spyMap.set(key, spyInstance);
+        spyInstances.push(spyInstance);
       }
 
-      spyInstances.push(spyInstance);
+      // If multiple spies for same method, use sequential spying
+      if (spyGroup.length > 1) {
+        for (const spy of spyGroup) {
+          switch (spy.returnType) {
+            case 'value':
+              spyInstance.mockReturnValueOnce(spy.value);
+              break;
+            case 'asyncValue':
+              spyInstance.mockResolvedValueOnce(spy.value);
+              break;
+            case 'error':
+              spyInstance.mockImplementationOnce(() => {
+                throw spy.error;
+              });
+              break;
+            case 'implementation':
+              spyInstance.mockImplementationOnce(spy.implementation);
+              break;
+          }
+        }
+      } else {
+        // Single spy - use regular spying
+        switch (firstSpy.returnType) {
+          case 'value':
+            spyInstance.mockReturnValue(firstSpy.value);
+            break;
+          case 'asyncValue':
+            spyInstance.mockResolvedValue(firstSpy.value);
+            break;
+          case 'error':
+            spyInstance.mockImplementation(() => {
+              throw firstSpy.error;
+            });
+            break;
+          case 'implementation':
+            spyInstance.mockImplementation(firstSpy.implementation);
+            break;
+        }
+      }
     }
 
     return spyInstances;

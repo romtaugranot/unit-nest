@@ -17,7 +17,8 @@ export class TestsBuilder<S extends Provider> {
     // Always enable shallow mocking - automatically mock missing dependencies
     const classProviders = providers.filter(p => typeof p === 'function');
 
-    const autoMocks = AutoMockResolver.createAutoMocks(classProviders);
+    // Recursively find and auto-mock dependencies of dependencies
+    const autoMocks = AutoMockResolver.createAutoMocks(classProviders, cut);
 
     this.allProviders = [...providers, ...autoMocks];
 
