@@ -24,27 +24,13 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
     const spyInstances = this.applySelfSpies(cutInstance, spies);
 
     try {
-      const boundMethod = cutInstance[method].bind(cutInstance, ...args);
+      const boundMethod = cutInstance[method].bind(
+        cutInstance,
+        ...(args ?? []),
+      );
 
       if ('error' in expectation) {
-        // Test if the method throws an error
-        try {
-          const result = boundMethod();
-          if (result && typeof result.then === 'function') {
-            // Async method - wait for it to reject
-            await expect(result).rejects.toThrow();
-          } else {
-            // Sync method threw - this should not reach here if it throws properly
-            throw new Error(
-              'Expected method to throw an error, but it returned a value',
-            );
-          }
-        } catch (error) {
-          // Sync method threw - this is expected for sync throwing methods
-          expect(() => {
-            throw error;
-          }).toThrow();
-        }
+        await this.assertExpectedThrow(boundMethod, expectation.error);
       } else {
         try {
           let result = boundMethod();
@@ -65,6 +51,99 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
 
       this.restoreSpies(spyInstances);
     }
+  }
+
+  private async assertExpectedThrow(
+    boundMethod: () => unknown,
+    expectedError: unknown,
+  ): Promise<void> {
+    let result: unknown;
+
+    try {
+      result = boundMethod();
+    } catch (error) {
+      this.assertExpectedError(error, expectedError);
+      return;
+    }
+
+    if (this.isPromiseLike(result)) {
+      const outcome = await this.getPromiseOutcome(result);
+
+      if (outcome.status === 'resolved') {
+        throw new Error('Expected method to throw an error, but it resolved');
+      }
+
+      this.assertExpectedError(outcome.error, expectedError);
+      return;
+    }
+
+    throw new Error('Expected method to throw an error, but it returned a value');
+  }
+
+  private isPromiseLike(value: unknown): value is Promise<unknown> {
+    return Boolean(value) && typeof (value as Promise<unknown>).then === 'function';
+  }
+
+  private async getPromiseOutcome(
+    promise: Promise<unknown>,
+  ): Promise<
+    | { status: 'resolved'; value: unknown }
+    | { status: 'rejected'; error: unknown }
+  > {
+    return promise.then(
+      value => ({ status: 'resolved', value }),
+      error => ({ status: 'rejected', error }),
+    );
+  }
+
+  private assertExpectedError(actual: unknown, expected: unknown): void {
+    if (expected === undefined) {
+      expect(actual).toBeDefined();
+      return;
+    }
+
+    if (typeof expected === 'string') {
+      expect(this.getErrorMessage(actual)).toContain(expected);
+      return;
+    }
+
+    if (expected instanceof RegExp) {
+      expect(this.getErrorMessage(actual)).toMatch(expected);
+      return;
+    }
+
+    if (
+      expected &&
+      typeof expected === 'object' &&
+      'asymmetricMatch' in expected &&
+      typeof (expected as { asymmetricMatch?: unknown }).asymmetricMatch ===
+        'function'
+    ) {
+      expect(actual).toEqual(expected);
+      return;
+    }
+
+    if (typeof expected === 'function') {
+      expect(actual).toBeInstanceOf(expected as new (...args: any[]) => any);
+      return;
+    }
+
+    if (expected instanceof Error) {
+      expect(actual).toBeInstanceOf(
+        expected.constructor as new (...args: any[]) => Error,
+      );
+      return;
+    }
+
+    expect(actual).toEqual(expected);
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return String(error);
   }
 
   /**

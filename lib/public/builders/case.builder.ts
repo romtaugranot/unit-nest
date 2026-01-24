@@ -19,7 +19,7 @@ import {
 import { SuiteBuilder } from './suite.builder';
 
 export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
-  private testArgs!: MethodParams<S, K>;
+  private testArgs: MethodParams<S, K> = [] as MethodParams<S, K>;
   private testMocks: MockConfiguration<S>[];
   private testModuleMocks: ModuleMockConfiguration[];
   private testExpectation!: Expectation<S, K>;
