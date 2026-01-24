@@ -43,7 +43,7 @@ class ValidationService {
     if (!userData.name || userData.name.length < 2) {
       throw new Error('Name must be at least 2 characters');
     }
-    if (!userData.email || !userData.email.includes('@')) {
+    if (!userData.email?.includes('@')) {
       throw new Error('Invalid email format');
     }
     return true;

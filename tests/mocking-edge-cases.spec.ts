@@ -64,7 +64,7 @@ class ComplexTypeService {
   ) {
     return {
       required,
-      optional: optional || 'not-provided',
+      optional: optional ?? 'not-provided',
       defaultParam,
     };
   }
