@@ -38,8 +38,28 @@ export class AutoMockResolver {
   private static getMethodNames<T extends Provider>(
     provider: T,
   ): MethodKeys<T>[] {
-    return Object.getOwnPropertyNames(provider.prototype).filter(
-      methodName => typeof provider.prototype[methodName] === 'function',
-    ) as MethodKeys<T>[];
+    const methodNames = new Set<string>();
+    let currentPrototype = provider.prototype;
+
+    while (currentPrototype && currentPrototype !== Object.prototype) {
+      for (const methodName of Object.getOwnPropertyNames(currentPrototype)) {
+        if (methodName === 'constructor') {
+          continue;
+        }
+
+        const descriptor = Object.getOwnPropertyDescriptor(
+          currentPrototype,
+          methodName,
+        );
+
+        if (descriptor && typeof descriptor.value === 'function') {
+          methodNames.add(methodName);
+        }
+      }
+
+      currentPrototype = Object.getPrototypeOf(currentPrototype);
+    }
+
+    return Array.from(methodNames) as MethodKeys<T>[];
   }
 }
