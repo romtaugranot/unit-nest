@@ -15,9 +15,7 @@ export class TestsBuilder<S extends Provider> {
 
   constructor(cut: S, ...providers: NestProvider[]) {
     // Always enable shallow mocking - automatically mock missing dependencies
-    const classProviders = providers.filter(p => typeof p === 'function');
-
-    const autoMocks = AutoMockResolver.createAutoMocks(classProviders);
+    const autoMocks = AutoMockResolver.resolveAutoMocks(cut, providers);
 
     this.allProviders = [...providers, ...autoMocks];
 
