@@ -74,6 +74,7 @@ module.exports = [
       'dist/',
       'node_modules/',
       'coverage/',
+      'tests/',
       '**/*.d.ts',
       '**/*.js',
       '**/*.mjs',
