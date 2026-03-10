@@ -190,6 +190,18 @@ MIT © Contributors of unit-nest
 
 ---
 
+## 📖 Examples
+
+See [EXAMPLES.md](EXAMPLES.md) for copy-paste-ready examples covering every feature: basic usage, async methods, error scenarios, module mocking (axios, fs), self-spying, and token injection.
+
+---
+
+## 🤖 AI Agents & Contributors
+
+See [AGENTS.md](AGENTS.md) for guidelines on repository layout, coding conventions, how to add new builder methods or module helpers, and rules that AI coding assistants should follow when working in this codebase.
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions! 
