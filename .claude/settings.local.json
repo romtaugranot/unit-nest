@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm list:*)",
+      "Bash(grep -r \"jsdoc\\\\|jsDoc\\\\|doc\\\\|documentation\" /c/Documents/coding-projects/libraries/nest-forge/node_modules/orval/dist --include=*.d.ts)",
+      "Bash(find /c/Documents/coding-projects/libraries/nest-forge/node_modules/orval -name *.d.ts -type f)",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Documents/coding-projects/libraries/nest-forge/src -type f -name *.ts)",
+      "Bash(find /c/Documents/coding-projects/libraries/nest-forge/node_modules/@orval -name *.d.ts -type f)",
+      "Bash(find /c/Documents/coding-projects/libraries/nest-forge/node_modules/@orval/core -type f -name *.d.ts)",
+      "Bash(file /c/Documents/coding-projects/libraries/nest-forge/node_modules/@orval/core/dist/*.mts)",
+      "Bash(grep -r \"generateOptions\\\\|verbOptions\\\\|OutputClient\" /c/Documents/coding-projects/libraries/nest-forge/node_modules/@orval/core --include=*.d.ts --include=*.d.mts)",
+      "Bash(npm run:*)",
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm view:*)",
+      "Bash(npm install:*)",
+      "Bash(find /c/Documents/coding-projects/libraries/unit-nest/lib /c/Documents/coding-projects/libraries/unit-nest/tests -type f -name *.ts)",
+      "WebFetch(domain:docs.nestjs.com)",
+      "Bash(npx tsc:*)",
+      "Bash(npx jest:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)"
+    ]
+  }
+}
