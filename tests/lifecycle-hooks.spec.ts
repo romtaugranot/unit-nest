@@ -149,7 +149,7 @@ class InitOnlyService implements OnModuleInit {
   constructor(private readonly databaseService: DatabaseService) {}
 
   onModuleInit(): void {
-    // Sync hook
+    this.databaseService.connect();
   }
 
   getStatus(): string {
