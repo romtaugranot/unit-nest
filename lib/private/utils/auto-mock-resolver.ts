@@ -18,7 +18,11 @@ export class AutoMockResolver {
     return autoMocks;
   }
 
-  private static createMockObject<T extends Provider>(provider: T) {
+  // Flag: `as MockClassObject<T>` is unavoidable — Object.fromEntries loses
+  // key-level type information for generic mapped types (Rule 10)
+  private static createMockObject<T extends Provider>(
+    provider: T,
+  ): MockClassObject<T> {
     const mockObject: MockClassObject<T> = {} as MockClassObject<T>;
 
     const methodNames = AutoMockResolver.getMethodNames(provider);
@@ -38,6 +42,8 @@ export class AutoMockResolver {
   private static getMethodNames<T extends Provider>(
     provider: T,
   ): MethodKeys<T>[] {
+    // Flag: `as MethodKeys<T>[]` is unavoidable — Object.getOwnPropertyNames returns
+    // string[] and TypeScript cannot narrow to the generic method key union (Rule 10)
     return Object.getOwnPropertyNames(provider.prototype).filter(methodName => {
       if (methodName === 'constructor') {
         return false;

@@ -1,5 +1,6 @@
 import { CaseBuilder } from './case.builder';
 import {
+  LifecycleHookName,
   MethodKeys,
   Provider,
   TestCaseStore,
@@ -15,6 +16,7 @@ export class SuiteBuilder<S extends Provider, K extends MethodKeys<S>> {
     private readonly method: K,
     private readonly testsBuilder: TestsBuilder<S>,
     private readonly suiteStore: TestSuiteStore<S, MethodKeys<S>>,
+    private readonly isHookSuite: boolean = false,
   ) {
     this.caseStore = new TestCaseStore<S, MethodKeys<S>>();
   }
@@ -36,6 +38,14 @@ export class SuiteBuilder<S extends Provider, K extends MethodKeys<S>> {
   }
 
   private get suite(): TestSuite<S, K> {
+    if (this.isHookSuite) {
+      return {
+        method: this.method,
+        cases: this.caseStore.cases,
+        hookName: this.method as string as LifecycleHookName,
+      };
+    }
+
     return {
       method: this.method,
       cases: this.caseStore.cases,

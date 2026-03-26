@@ -1,4 +1,5 @@
 export * from './expectation.interface';
+export * from './lifecycle-hook-config.interface';
 export * from './mock-config.interface';
 export * from './module-mock-config.interface';
 export * from './self-spy-config.interface';

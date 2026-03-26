@@ -1,10 +1,10 @@
 import {
   AxiosFunctions,
   Expectation,
-  FsAsyncFunctions,
-  FsReturn,
-  FsReturnAsync,
-  FsSyncFunctions,
+  FileSystemAsyncFunctions,
+  FileSystemReturn,
+  FileSystemReturnAsync,
+  FileSystemSyncFunctions,
   MethodKeys,
   MethodParams,
   MethodReturn,
@@ -19,11 +19,11 @@ import {
 import { SuiteBuilder } from './suite.builder';
 
 export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
-  private testArgs!: MethodParams<S, K>;
-  private testMocks: MockConfiguration<S>[];
-  private testModuleMocks: ModuleMockConfiguration[];
-  private testExpectation!: Expectation<S, K>;
-  private testSpies: SelfSpyConfiguration<S>[];
+  private testArgs: MethodParams<S, K> | undefined = undefined;
+  private readonly testMocks: MockConfiguration<S>[];
+  private readonly testModuleMocks: ModuleMockConfiguration[];
+  private testExpectation: Expectation<S, K> | undefined = undefined;
+  private readonly testSpies: SelfSpyConfiguration<S>[];
 
   constructor(
     private readonly suiteBuilder: SuiteBuilder<S, K>,
@@ -154,6 +154,7 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   mockModuleImplementation(
     moduleName: string,
     method: string,
+    // Flag: `any[]` is unavoidable — function parameter contravariance (Rule 9)
     implementation: (...args: any[]) => unknown,
   ): this {
     this.testModuleMocks.push({
@@ -173,15 +174,34 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
     return this.mockModuleReturn('axios', method, value);
   }
 
-  mockFS<M extends FsSyncFunctions>(method: M, value: FsReturn<M>): this {
+  mockFileSystem<M extends FileSystemSyncFunctions>(
+    method: M,
+    value: FileSystemReturn<M>,
+  ): this {
     return this.mockModuleReturn('fs', method, value);
   }
 
-  mockFSAsync<M extends FsAsyncFunctions>(
+  mockFileSystemAsync<M extends FileSystemAsyncFunctions>(
     method: M,
-    value: FsReturnAsync<M>,
+    value: FileSystemReturnAsync<M>,
   ): this {
     return this.mockModuleReturnAsync('fs/promises', method, value);
+  }
+
+  /** @deprecated Use `mockFileSystem` instead */
+  mockFS<M extends FileSystemSyncFunctions>(
+    method: M,
+    value: FileSystemReturn<M>,
+  ): this {
+    return this.mockFileSystem(method, value);
+  }
+
+  /** @deprecated Use `mockFileSystemAsync` instead */
+  mockFSAsync<M extends FileSystemAsyncFunctions>(
+    method: M,
+    value: FileSystemReturnAsync<M>,
+  ): this {
+    return this.mockFileSystemAsync(method, value);
   }
 
   /**
@@ -248,8 +268,8 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
   /**
    * Set the arguments for the test case
    */
-  args(...args: MethodParams<S, K>): this {
-    this.testArgs = args;
+  args(...testArgs: MethodParams<S, K>): this {
+    this.testArgs = testArgs;
 
     return this;
   }
@@ -290,15 +310,21 @@ export class CaseBuilder<S extends Provider, K extends MethodKeys<S>> {
    * Complete the current test case and return to the suite builder
    */
   doneCase(): SuiteBuilder<S, K> {
-    this.caseStore.addTestCase(this.case);
+    this.caseStore.addTestCase(this.testCase);
 
     return this.suiteBuilder;
   }
 
-  private get case(): TestCase<S, K> {
+  private get testCase(): TestCase<S, K> {
+    if (this.testExpectation === undefined) {
+      throw new Error('Test expectation must be set before calling doneCase()');
+    }
+
     return {
       description: this.description,
-      args: this.testArgs,
+      // Flag: assertion is unavoidable — TypeScript cannot verify that an empty
+      // array satisfies an arbitrary parameter tuple type (Rule 10)
+      args: this.testArgs ?? ([] as unknown as MethodParams<S, K>),
       mocks: this.testMocks,
       moduleMocks: this.testModuleMocks,
       expectation: this.testExpectation,

@@ -19,7 +19,7 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
     cutInstance: InstanceType<S>,
   ): Promise<void> {
     const mockInstances = this.applyMocks(testingModule, mocks);
-    const moduleRestoreFns = this.applyModuleMocks(moduleMocks ?? []);
+    const moduleRestoreFunctions = this.applyModuleMocks(moduleMocks ?? []);
 
     const spyInstances = this.applySelfSpies(cutInstance, spies);
 
@@ -61,7 +61,7 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
       }
     } finally {
       this.restoreMocks(mockInstances);
-      this.restoreModuleMocks(moduleRestoreFns);
+      this.restoreModuleMocks(moduleRestoreFunctions);
 
       this.restoreSpies(spyInstances);
     }
@@ -73,7 +73,7 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
   private applyModuleMocks(
     moduleMocks: ModuleMockConfiguration[],
   ): Array<() => void> {
-    const restoreFns: Array<() => void> = [];
+    const restoreFunctions: Array<() => void> = [];
 
     for (const mock of moduleMocks) {
       const originalModule = require(mock.moduleName);
@@ -99,17 +99,17 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
           break;
       }
 
-      restoreFns.push(() => {
+      restoreFunctions.push(() => {
         spy.mockRestore();
         originalModule[mock.method] = originalMethod;
       });
     }
 
-    return restoreFns;
+    return restoreFunctions;
   }
 
-  private restoreModuleMocks(restoreFns: Array<() => void>): void {
-    restoreFns.forEach(fn => fn());
+  private restoreModuleMocks(restoreFunctions: Array<() => void>): void {
+    restoreFunctions.forEach(restoreFunction => restoreFunction());
   }
 
   /**
@@ -159,7 +159,10 @@ export class TestCaseExecuter<S extends Type, K extends MethodKeys<S>> {
     const spyInstances: jest.SpyInstance[] = [];
 
     for (const spy of spies) {
-      const spyInstance = jest.spyOn(cutInstance as any, spy.method.toString());
+      // Flag: `as Record<string, jest.Func>` is unavoidable — jest.spyOn cannot
+      // infer method keys from a generic InstanceType<S> (Rule 10)
+      const target = cutInstance as Record<string, jest.Func>;
+      const spyInstance = jest.spyOn(target, spy.method.toString());
 
       switch (spy.returnType) {
         case 'value':

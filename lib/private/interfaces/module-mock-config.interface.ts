@@ -23,6 +23,8 @@ export interface ModuleMockImplementationConfiguration {
   moduleName: string;
   method: string;
   returnType: 'implementation';
+  // Flag: `any[]` is unavoidable — function parameter contravariance means
+  // typed implementations (e.g. `(url: string) => ...`) are not assignable to `(...args: unknown[]) => unknown` (Rule 9)
   implementation: (...args: any[]) => unknown;
 }
 
